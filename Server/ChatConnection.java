@@ -5,6 +5,7 @@ import java.rmi.server.UnicastRemoteObject;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.StringJoiner;
 import java.util.UUID;
 
@@ -62,32 +63,6 @@ public class ChatConnection
     }
 
     @Override
-    public String get(String userToken) throws RemoteException {
-        if (!isClientRegistered(userToken)) {
-            return CLIENT_NOT_REGISTERED;
-        }
-
-        var sj = new StringJoiner("\n");
-        var t = new Thread(() -> {
-            messageSemaphore.passeren(1);
-            var len = Math.min(50, messages.size());
-            for (int i = 0; i < len; i++) {
-                sj.add(messages.get(i).toString());
-            }
-            messageSemaphore.vrijgave(1);
-        });
-
-        t.start();
-        try {
-            t.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
-
-        return sj.toString();
-    }
-
-    @Override
     public String register(String name) throws RemoteException {
         var r = new Return<String>();
         var t = new Thread(() -> {
@@ -128,5 +103,18 @@ public class ChatConnection
         }
 
         return null;
+    }
+
+    @Override
+    public List<ChatMessage> get(String userToken, Date dat) throws RemoteException {
+        if (!isClientRegistered(userToken)) {
+            return new ArrayList<ChatMessage>(); 
+        }
+
+        if (dat == null) {
+            return messages;
+        }
+
+        return messages.stream().filter(e -> e.time.compareTo(dat) > 0).toList();
     }
 }

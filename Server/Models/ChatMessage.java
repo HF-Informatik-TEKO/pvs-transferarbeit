@@ -2,8 +2,9 @@ package Server.Models;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.io.Serializable; 
 
-public class ChatMessage {
+public class ChatMessage implements Serializable {
     public Date time;
     public String user;
     public String message;
@@ -12,6 +13,6 @@ public class ChatMessage {
     public String toString() {
         var formatter = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
         var formatted = formatter.format(time);
-        return formatted + "|" + user + "|" + message;
+        return formatted + " | " + user + " | " + message;
     }
 }
