@@ -12,8 +12,6 @@ public class ChatServer {
             registry.bind("Chat", new ChatConnection());
         } catch (Exception e) {
             System.err.println("Error in Server: " + e.getMessage());
-        } finally {
-            System.out.println("Shutdown server with port " + PORT);
         }
     }
 }
