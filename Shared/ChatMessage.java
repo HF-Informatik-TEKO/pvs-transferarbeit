@@ -5,13 +5,15 @@ import java.util.Date;
 import java.io.Serializable;
 
 public class ChatMessage implements Serializable {
+    private final MessageType type;
     private final Date time = new Date();
     private final String user;
     private final String message;
 
-    public ChatMessage(String user, String message) {
+    public ChatMessage(String user, String message, MessageType type) {
         this.user = user;
         this.message = message;
+        this.type = type;
     }
     
     @Override
@@ -19,12 +21,22 @@ public class ChatMessage implements Serializable {
         var formatted = getTimeString();
         return String.format("%s | %s:\n-> %s", formatted, user, message);
     }
-    
-    public String toMessageHtml() {
+
+    public String toHtml() {
+        if (type == MessageType.Error) {
+            return toErrorMessageHtml();
+        }
         return toMessageHtml("");
     }
 
-    public String toMessageHtml(String userName) {
+    public String toHtml(String userName) {
+        if (type == MessageType.Error) {
+            return toErrorMessageHtml();
+        }
+        return toMessageHtml(userName);
+    }
+
+    private String toMessageHtml(String userName) {
         return String.format(""
             + "<div class='%s'>"
                 + "<span class='sender'>%s | <strong>%s</strong>:</span><br>" // time and user
@@ -37,7 +49,7 @@ public class ChatMessage implements Serializable {
         );
     }
 
-    public String toErrorMessageHtml() {
+    private String toErrorMessageHtml() {
         return String.format(""
             + "<div class=''>"
                 + "<span class='sender'>%s | <strong>%s</strong>:</span><br>" // time and user
