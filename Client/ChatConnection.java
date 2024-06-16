@@ -13,15 +13,16 @@ public class ChatConnection {
 
     private final IChatConnection connection;
     private final ChatWindow gui;
-    private final int MESSAGE_GET_MAX_COUNT = 10;
+    private final int MESSAGE_GET_MAX_COUNT;
 
     private String userToken;
     private String userName;
     private int messageGetFailCounter;
 
-    public ChatConnection(IChatConnection connection, ChatWindow gui) {
+    public ChatConnection(IChatConnection connection, ChatWindow gui, int maxTimeouts) {
         this.connection = connection;
         this.gui = gui;
+        this.MESSAGE_GET_MAX_COUNT = maxTimeouts;
     }
 
     public String registerUser(String userName, String password) {

@@ -14,11 +14,9 @@ public class ChatWindow extends JFrame{
     public final Color BACKGROUND_COLOR = new Color(130, 150, 140);
     public final int BORDER_THICKNESS = 3;
     
-    /** Delay between calls for new messages. */
-    private final int REFRESH_RATE_MS;
-    /** Delay between client history clean (reset to server max history and only server messages.). */
-    private final long RESET_RATE_MS; // 10 Minutes
     private final ChatConnection CHAT;
+    private final long RESET_RATE_MS;
+    private final int REFRESH_RATE_MS;
 
     private RegistrationJPanel registration;
     private MessageDisplayJPanel displayMessage;
@@ -29,10 +27,11 @@ public class ChatWindow extends JFrame{
         IChatConnection chat, 
         String errorMessage, 
         int refreshRate, 
-        long resetRate
+        long resetRate, 
+        int maxTimeouts
         ) 
     {
-        this.CHAT = new ChatConnection(chat, this);
+        this.CHAT = new ChatConnection(chat, this, maxTimeouts);
         this.REFRESH_RATE_MS = refreshRate;
         this.RESET_RATE_MS = resetRate;
         
