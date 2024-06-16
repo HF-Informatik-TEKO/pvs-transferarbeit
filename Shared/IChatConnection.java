@@ -10,7 +10,7 @@ public interface IChatConnection extends Remote {
      * Register as chat client with nickname.
      * Returns a client token to interact with the RPC.
      */
-    public String register(String nickname) throws RemoteException;
+    public String register(String nickname, String password) throws RemoteException;
 
     /**
      * If the user is registere, store the message.

@@ -20,7 +20,7 @@ public class ChatConnection
     private final ArrayList<ChatMessage> CLIENT_NOT_REGISTERED_LIST;
 
     private final MySemaphore clientSemaphore = new MySemaphore(10);
-    private final HashMap<String, String> clients = new HashMap<>(); // key = token, value = name
+    private final HashMap<String, UserCredentials> clients = new HashMap<>(); // key = token, value = name
     private final MySemaphore messageSemaphore = new MySemaphore(10);
     private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
@@ -35,18 +35,19 @@ public class ChatConnection
     }
 
     @Override
-    public String register(String name) throws RemoteException {
+    public String register(String name, String password) throws RemoteException {
+        var credentials = new UserCredentials(name, password);
         var t = new Thread(() -> {
             clientSemaphore.passeren(1);
-            var isKeyPresent = clients.containsValue(name);
+            var isUserNamePresent = isUserNameTaken(name);
             clientSemaphore.vrijgave(1);
-            if (isKeyPresent) {
+            if (isUserNamePresent) {
                 return;
             }
 
             var uid = UUID.randomUUID().toString();
             clientSemaphore.passeren(10);
-            clients.put(uid, name);
+            clients.put(uid, credentials);
             clientSemaphore.vrijgave(10);
         });
 
@@ -58,7 +59,7 @@ public class ChatConnection
             return null;
         }
 
-        return getClientToken(name);
+        return getClientToken(credentials);
     }
 
     @Override
@@ -68,7 +69,7 @@ public class ChatConnection
         }
 
         var t = new Thread(() -> {
-            var m = new ChatMessage(clients.get(userToken), message);
+            var m = new ChatMessage(clients.get(userToken).getUserName(), message);
 
             messageSemaphore.passeren(10);
             messages.add(m);
@@ -107,9 +108,19 @@ public class ChatConnection
         return clients.containsKey(userToken);
     }
 
-    private String getClientToken(String name) {
+    private boolean isUserNameTaken(String userName) {
         for (var entry : clients.entrySet()) {
-            if (entry.getValue().equals(name)) {
+            if (entry.getValue().getUserName().equals(userName)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private String getClientToken(UserCredentials credentials) {
+        for (var entry : clients.entrySet()) {
+            if (entry.getValue().equals(credentials)) {
                 return entry.getKey();
             }
         }

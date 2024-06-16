@@ -1,7 +1,7 @@
 package Client;
 
 import javax.swing.*;
-import java.awt.BorderLayout;
+import java.awt.*;
 import javax.swing.border.EmptyBorder;
 
 import java.awt.event.KeyEvent;
@@ -25,15 +25,16 @@ public class ChatClient {
     private static final String RPC_NAME = "Chat";
     /** Delay between calls for new messages. */
     private static final int REFRESH_RATE_MS = 800;
-    /** Delay between client history clean (reset to server max history). */
-    private static final long RESET_RATE_MS = 600_000; // 10 Minutes
+    /** Delay between client history clean (reset to server max history and only server messages.). */
+    private static final long RESET_RATE_MS = 60_000; // 10 Minutes
 
     private static final String HTML_HEADER = ""
         + "<head><style>"
-            + "body { font-size: 12px; font-family: Consolas, sans-serif; color: red; }"
+            + "body { font-size: 12px; font-family: Consolas, sans-serif; color: white; }"
             + ".sender { color: gray; font-style: italic; font-size: 11px}"
             + ".message { color: green; }"
             + ".self { text-align: right; }"
+            + ".error { color: red; }"
         + "</style></head>";
 
     private static String userName;
@@ -48,9 +49,9 @@ public class ChatClient {
         } catch (Exception e) {
             e.printStackTrace();
             errorMessage = ""
-            + "Type: " + e.getClass().getSimpleName()
-            + "<br>Connection: " + connection
-            + "<br>Message: " + e.getMessage(); 
+            + "Type:\n->" + e.getClass().getSimpleName()
+            + "<br>Connection:\n->" + connection
+            + "<br>Message:\n->" + e.getMessage();
         }
         var window = getClientWindow(chat, errorMessage);
         window.setVisible(true);
@@ -78,9 +79,17 @@ public class ChatClient {
         registrationPanel.setBorder(new EmptyBorder(0, 0, b, 0));
         registrationPanel.setBackground(windowBgColor);
 
-        var registrationInput = new JTextField(21);
-        registrationInput.setToolTipText("Choose a user name to chat with others (visible).");
-        registrationPanel.add(registrationInput, BorderLayout.CENTER);
+        var userAndPasswordPanel = new JPanel(new GridLayout(1, 2));
+
+        var registrationUserName = new JTextField();
+        registrationUserName.setToolTipText("Choose a user name to chat with others (visible).");
+        userAndPasswordPanel.add(registrationUserName, BorderLayout.WEST);
+
+        var registrationPassword = new JPasswordField();
+        registrationPassword.setToolTipText("Choose a password, if the user doesn't exist. "
+            + "Enter the correct password, if the user exists.");
+        userAndPasswordPanel.add(registrationPassword, BorderLayout.CENTER);
+        registrationPanel.add(userAndPasswordPanel);
 
         var registerButton = new JButton("Register");
         registrationPanel.add(registerButton, BorderLayout.EAST);
@@ -94,9 +103,9 @@ public class ChatClient {
         var htmlDocument = new HTMLDocument();
         editorPane.setDocument(htmlDocument);
         if (chat == null) {
-            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_FAIL_MESSAGE.toHtmlString() + "<div>" + errorMessage + "</div>");
+            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_FAIL.toErrorMessageHtml() + "<div>" + errorMessage + "</div>");
         } else {
-            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_SUCCESS_MESSAGE.toHtmlString());
+            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_SUCCESS.toMessageHtml());
         }
 
         var scrollPane = new JScrollPane(editorPane);
@@ -121,26 +130,50 @@ public class ChatClient {
         if (chat != null) {
         // #region ActionListeners
         registerButton.addActionListener(e -> {
-            System.out.println("register user");
-            userName = registrationInput.getText();
-            try {
-                var token = chat.register(userName);
-                if (token == null) {
-                    displayMessage(editorPane, SystemMessages.REGISTERED_FAIL_MESSAGE.toHtmlString());
-                    System.err.println("Failed to get user token for user " + userName);
-                    return;
-                }
-                userToken = token;
-            } catch (RemoteException e1) {
-                e1.printStackTrace();
+            if (registerButton.getText().equals("Logout")) {
+                System.out.println("logout user");
+                userName = null;
+                userToken = null;
+                displayMessage(editorPane, SystemMessages.LOGOUT_SUCCESS.toMessageHtml());
+                chatInput.setEnabled(false);
+                sendButton.setEnabled(false);
+                registrationUserName.setEditable(true);
+                registrationPassword.setText("");
+                registrationPassword.setEditable(true);
+                registerButton.setText("Register");
                 return;
             }
+
+            System.out.println("register user");
+            if (registrationUserName.getText().isBlank() || registrationPassword.getPassword().length < 1) {
+                displayMessage(editorPane, SystemMessages.NO_CREDENTIALS_FAIL.toErrorMessageHtml());
+                System.err.println("Unsufficient credentials for registration.");
+                return;
+            }
+
+            String token = null;
+            userName = registrationUserName.getText();
+            try {
+                token = chat.register(userName, new String(registrationPassword.getPassword()));
+            } catch (RemoteException ex) {
+                userName = null;
+                System.err.println("Remote exception on user register: " + ex.getMessage());
+            }
+            if (token == null) {
+                displayMessage(editorPane, SystemMessages.REGISTERED_FAIL.toErrorMessageHtml());
+                System.err.println("Failed to get user token for user " + userName);
+                return;
+            }
+            userToken = token;
             System.out.println("Successfully registered user, user token: " + userToken);
-            displayMessage(editorPane, SystemMessages.REGISTERED_SUCCESS_MESSAGE.toHtmlString());
+            displayMessage(editorPane, SystemMessages.REGISTERED_SUCCESS.toMessageHtml());
             chatInput.setEnabled(true);
             sendButton.setEnabled(true);
-            registerButton.setEnabled(false);
-            registrationInput.setEditable(false);
+            registrationUserName.setEditable(false);
+            registrationPassword.setText("");
+            registrationPassword.setEditable(false);
+            registerButton.setText("Logout");
+
         });
 
         sendButton.addActionListener(e -> {
@@ -195,6 +228,7 @@ public class ChatClient {
         while (true) {
             try {
                 if (userToken == null) {
+                    lastReset = System.currentTimeMillis();
                     continue;
                 }
 
@@ -216,7 +250,7 @@ public class ChatClient {
                     System.out.println("recieved message(s) " + fetchedMessages.size());
                     var sb = new StringBuilder();
                     for (var m : fetchedMessages) {
-                        sb.append(m.toHtmlString(userName));
+                        sb.append(m.toMessageHtml(userName));
                     }
                     try {
                         editorKit.insertHTML(htmlDocument, htmlDocument.getLength(), sb.toString(), 0, 0, null);

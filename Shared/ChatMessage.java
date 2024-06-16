@@ -20,17 +20,30 @@ public class ChatMessage implements Serializable {
         return String.format("%s | %s:\n-> %s", formatted, user, message);
     }
     
-    public String toHtmlString() {
-        return toHtmlString("");
+    public String toMessageHtml() {
+        return toMessageHtml("");
     }
 
-    public String toHtmlString(String userName) {
+    public String toMessageHtml(String userName) {
         return String.format(""
             + "<div class='%s'>"
                 + "<span class='sender'>%s | <strong>%s</strong>:</span><br>" // time and user
                 + "<span class='message'>%s</span>" // message
             + "</div>",
             userName.equals(user) ? "self" : "",
+            getTimeString(),
+            user,
+            message
+        );
+    }
+
+    public String toErrorMessageHtml() {
+        return String.format(""
+            + "<div class=''>"
+                + "<span class='sender'>%s | <strong>%s</strong>:</span><br>" // time and user
+                + "<span class='error'>%s</span>" // message
+            + "</div>",
+            // userName.equals(user) ? "self" : "",
             getTimeString(),
             user,
             message
