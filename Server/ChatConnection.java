@@ -17,12 +17,12 @@ public class ChatConnection
 {
     private final int MAX_MESSAGE_HISTORY;
     private final String CLIENT_NOT_REGISTERED_MESSAGE;
-    private final ArrayList<ChatMessage> CLIENT_NOT_REGISTERED_LIST;
+    private final List<ChatMessage> CLIENT_NOT_REGISTERED_LIST;
 
     private final MySemaphore clientSemaphore = new MySemaphore(10);
-    private final HashMap<String, UserCredentials> clients = new HashMap<>(); // key = token, value = name
+    private final HashMap<String, UserCredentials> clients = new HashMap<>();
     private final MySemaphore messageSemaphore = new MySemaphore(10);
-    private final ArrayList<ChatMessage> messages = new ArrayList<>();
+    private final List<ChatMessage> messages = new ArrayList<>();
 
     protected ChatConnection(int maxMessageHistory) throws RemoteException {
         super();
@@ -37,26 +37,16 @@ public class ChatConnection
     @Override
     public String register(String name, String password) throws RemoteException {
         var credentials = new UserCredentials(name, password);
-        var t = new Thread(() -> {
-            clientSemaphore.passeren(1);
-            var isUserNamePresent = isUserNameTaken(name);
-            clientSemaphore.vrijgave(1);
-            if (isUserNamePresent) {
-                return;
-            }
 
+        clientSemaphore.passeren(1);
+        var isUserNamePresent = isUserNameTaken(name);
+        clientSemaphore.vrijgave(1);
+
+        if (!isUserNamePresent) {
             var uid = UUID.randomUUID().toString();
             clientSemaphore.passeren(10);
             clients.put(uid, credentials);
             clientSemaphore.vrijgave(10);
-        });
-
-        t.start();
-
-        try {
-            t.join();
-        } catch (InterruptedException e) {
-            return null;
         }
 
         return getClientToken(credentials);
@@ -67,41 +57,37 @@ public class ChatConnection
         if (!isClientRegistered(userToken)) {
             return CLIENT_NOT_REGISTERED_MESSAGE;
         }
+        var m = new ChatMessage(clients.get(userToken).getUserName(), message);
 
-        var t = new Thread(() -> {
-            var m = new ChatMessage(clients.get(userToken).getUserName(), message);
-
-            messageSemaphore.passeren(10);
-            messages.add(m);
-
-            if (messages.size() > MAX_MESSAGE_HISTORY) {
-                messages.remove(0);
-            }
-            messageSemaphore.vrijgave(10);
-        });
-        t.start();
-
-        try {
-            t.join();
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        messageSemaphore.passeren(10);
+        messages.add(m);
+        if (messages.size() > MAX_MESSAGE_HISTORY) {
+            messages.remove(0);
         }
+        messageSemaphore.vrijgave(10);
 
         return "successfully sendt message to server. " + message;
     }
 
     @Override
-    public List<ChatMessage> get(String userToken, Date dat) throws RemoteException {
+    public List<ChatMessage> get(String userToken, Date filterDate) throws RemoteException {
         if (!isClientRegistered(userToken)) {
             return CLIENT_NOT_REGISTERED_LIST;
         }
 
-        if (dat == null) {
-            return messages;
-        }
+        List<ChatMessage> response;
 
-        // Filter messages by date.
-        return messages.stream().filter(e -> e.getTime().compareTo(dat) > 0).toList();
+        messageSemaphore.passeren(1);
+        if (filterDate == null) {
+            response = messages;
+        } else {
+            response = messages.stream()
+                .filter(e -> e.getTime().compareTo(filterDate) > 0)
+                .toList();
+        }
+        messageSemaphore.vrijgave(1);
+
+        return response;
     }
 
     private boolean isClientRegistered(String userToken) {
