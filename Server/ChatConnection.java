@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import Shared.ChatMessage;
 import Shared.IChatConnection;
+import Shared.MessageType;
 
 public class ChatConnection
     extends UnicastRemoteObject
@@ -31,7 +32,7 @@ public class ChatConnection
             "Sorry no client regiestered. Please register the client first.";
         CLIENT_NOT_REGISTERED_LIST = new ArrayList<>();
         CLIENT_NOT_REGISTERED_LIST.add(
-            new ChatMessage("System", CLIENT_NOT_REGISTERED_MESSAGE));
+            new ChatMessage("System", CLIENT_NOT_REGISTERED_MESSAGE, MessageType.Error));
     }
 
     @Override
@@ -57,7 +58,7 @@ public class ChatConnection
         if (!isClientRegistered(userToken)) {
             return CLIENT_NOT_REGISTERED_MESSAGE;
         }
-        var m = new ChatMessage(clients.get(userToken).getUserName(), message);
+        var m = new ChatMessage(clients.get(userToken).getUserName(), message, MessageType.Message);
 
         messageSemaphore.passeren(10);
         messages.add(m);
