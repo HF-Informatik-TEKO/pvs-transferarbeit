@@ -1,4 +1,4 @@
-package Server.Models;
+package Shared;
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -13,27 +13,28 @@ public class ChatMessage implements Serializable {
         this.user = user;
         this.message = message;
     }
-
-    public String toHtmlString() {
-        return toHtmlString("");
-    }
-
+    
     @Override
     public String toString() {
         var formatted = getTimeString();
         return String.format("%s | %s:\n-> %s", formatted, user, message);
     }
+    
+    public String toHtmlString() {
+        return toHtmlString("");
+    }
 
     public String toHtmlString(String userName) {
         return String.format(""
-                + "<div class='%s'>"
+            + "<div class='%s'>"
                 + "<span class='sender'>%s | <strong>%s</strong>:</span><br>" // time and user
                 + "<span class='message'>%s</span>" // message
-                + "</div>",
-                userName.equals(user) ? "self" : "",
-                getTimeString(),
-                user,
-                message);
+            + "</div>",
+            userName.equals(user) ? "self" : "",
+            getTimeString(),
+            user,
+            message
+        );
     }
 
     public String getTimeString() {
