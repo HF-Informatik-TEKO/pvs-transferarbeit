@@ -2,79 +2,80 @@ package Client;
 
 import javax.swing.*;
 import java.awt.BorderLayout;
-import javax.swing.border.*;
+import javax.swing.border.EmptyBorder;
 
 import java.awt.event.KeyEvent;
 import java.awt.Color;
-import java.net.MalformedURLException;
 import java.rmi.Naming;
-import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.awt.event.KeyAdapter;
-
-import Server.Models.*;
-import java.util.*;
+import java.util.Date;
+import java.util.List;
 
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
 
+import Shared.ChatMessage;
 import Shared.IChatConnection;
 
 public class ChatClient {
 
-    private static String userName;
-    private static String userToken;
-
+    private static final int PORT = 1200;
+    private static final String IP_ADDRESS = "127.0.0.1";
+    private static final String RPC_NAME = "Chat";
     /** Delay between calls for new messages. */
     private static final int REFRESH_RATE_MS = 800;
     /** Delay between client history clean (reset to server max history). */
     private static final long RESET_RATE_MS = 600_000; // 10 Minutes
-    private static final ChatMessage GREETINGS_MESSAGE = new ChatMessage("System",
-            "Welcome to the ChatServer.<br>"
-                    + "Please register first by entering a username in the inputfield at the top.");
-    private static final ChatMessage REGISTERED_SUCCESS_MESSAGE = new ChatMessage("System",
-            "Successfully registered on the server.<br>"
-                    + "You can now send your messages. ✉");
-    private static final ChatMessage REGISTERED_FAIL_MESSAGE = new ChatMessage("System",
-            "Failed registering on the server."
-                    + "Please restart the application and try again later.");
-    private static final String HTML_HEADER = "<head><style>"
-            + "body { font-size: 12px; font-family: Consolas, sans-serif; }"
+
+    private static final String HTML_HEADER = ""
+        + "<head><style>"
+            + "body { font-size: 12px; font-family: Consolas, sans-serif; color: red; }"
             + ".sender { color: gray; font-style: italic; font-size: 11px}"
             + ".message { color: green; }"
             + ".self { text-align: right; }"
-            + "</style></head>";
+        + "</style></head>";
+
+    private static String userName;
+    private static String userToken;
 
     public static void main(String[] args) {
+        IChatConnection chat = null;
+        String errorMessage = null;
+        String connection = String.format("rmi://%s:%d/%s", IP_ADDRESS, PORT, RPC_NAME);
         try {
-            var chat = (IChatConnection) Naming.lookup("rmi://127.0.0.1:1200/Chat");
-            var window = getClientWindow(chat);
-            window.setVisible(true);
-        } catch (MalformedURLException e) {
+            chat = (IChatConnection) Naming.lookup(connection);
+        } catch (Exception e) {
             e.printStackTrace();
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        } catch (NotBoundException e) {
-            e.printStackTrace();
+            errorMessage = ""
+            + "Type: " + e.getClass().getSimpleName()
+            + "<br>Connection: " + connection
+            + "<br>Message: " + e.getMessage(); 
         }
+        var window = getClientWindow(chat, errorMessage);
+        window.setVisible(true);
     }
 
-    private static JFrame getClientWindow(IChatConnection chat) {
-        var window = new JFrame("My Window");
+    private static JFrame getClientWindow(IChatConnection chat, String errorMessage) {
+        var window = new JFrame(
+            "RCP (RMI) - TCP, Chat Client"
+            + " | PVS Transverarbeit | Beat Zimmermann"
+            + " | Z-TIN-21-T-a | HF Informatik Appl."
+        );
         window.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         window.setSize(800, 600);
         window.setLocationRelativeTo(null);
 
-        var windowBgColor = new Color(100, 100, 100);
-        var borderThikness = 3;
+        var windowBgColor = new Color(130, 150, 140); // gray background color
+        var b = 3; // border-thickness
 
         var mainPanel = new JPanel(new BorderLayout());
-        mainPanel.setBorder(new EmptyBorder(borderThikness, borderThikness, borderThikness, borderThikness));
+        mainPanel.setBorder(new EmptyBorder(b, b, b, b));
         mainPanel.setBackground(windowBgColor);
 
         // #region Registration
         var registrationPanel = new JPanel(new BorderLayout());
-        registrationPanel.setBorder(new EmptyBorder(0, 0, borderThikness, 0));
+        registrationPanel.setBorder(new EmptyBorder(0, 0, b, 0));
         registrationPanel.setBackground(windowBgColor);
 
         var registrationInput = new JTextField(21);
@@ -92,7 +93,11 @@ public class ChatClient {
         editorPane.setEditable(false);
         var htmlDocument = new HTMLDocument();
         editorPane.setDocument(htmlDocument);
-        displayMessage(editorPane, HTML_HEADER + GREETINGS_MESSAGE.toHtmlString());
+        if (chat == null) {
+            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_FAIL_MESSAGE.toHtmlString() + "<div>" + errorMessage + "</div>");
+        } else {
+            displayMessage(editorPane, HTML_HEADER + SystemMessages.STARTUP_SUCCESS_MESSAGE.toHtmlString());
+        }
 
         var scrollPane = new JScrollPane(editorPane);
         // #endregion
@@ -113,29 +118,29 @@ public class ChatClient {
         messagePanel.add(sendButton, BorderLayout.EAST);
         // #endregion
 
+        if (chat != null) {
         // #region ActionListeners
         registerButton.addActionListener(e -> {
             System.out.println("register user");
             userName = registrationInput.getText();
             try {
-                userToken = chat.register(userName);
-                if (userToken == null) {
-                    displayMessage(editorPane, REGISTERED_FAIL_MESSAGE.toHtmlString());
+                var token = chat.register(userName);
+                if (token == null) {
+                    displayMessage(editorPane, SystemMessages.REGISTERED_FAIL_MESSAGE.toHtmlString());
                     System.err.println("Failed to get user token for user " + userName);
                     return;
                 }
+                userToken = token;
             } catch (RemoteException e1) {
                 e1.printStackTrace();
                 return;
             }
             System.out.println("Successfully registered user, user token: " + userToken);
-            displayMessage(editorPane, REGISTERED_SUCCESS_MESSAGE.toHtmlString());
+            displayMessage(editorPane, SystemMessages.REGISTERED_SUCCESS_MESSAGE.toHtmlString());
             chatInput.setEnabled(true);
             sendButton.setEnabled(true);
             registerButton.setEnabled(false);
             registrationInput.setEditable(false);
-            // Thread.sleep(5_000);
-            // editorPane.setText("");
         });
 
         sendButton.addActionListener(e -> {
@@ -150,6 +155,7 @@ public class ChatClient {
             }
         });
         // #endregion
+        }
 
         mainPanel.add(registrationPanel, BorderLayout.NORTH);
         mainPanel.add(scrollPane, BorderLayout.CENTER);
@@ -183,8 +189,8 @@ public class ChatClient {
     private static void fetchAndDisplayMessages(IChatConnection chat, JEditorPane editorPane) {
         var htmlDocument = (HTMLDocument) editorPane.getDocument();
         var editorKit = (HTMLEditorKit) editorPane.getEditorKit();
-        var lastRecieved = new Date();
         var lastReset = System.currentTimeMillis();
+        Date lastRecieved = null;
 
         while (true) {
             try {
@@ -219,9 +225,9 @@ public class ChatClient {
                         System.err.println("Failed to add messages to UI.");
                         continue;
                     }
+                    lastRecieved = new Date();
                 }
 
-                lastRecieved = new Date();
             } finally {
                 try {
                     Thread.sleep(REFRESH_RATE_MS);

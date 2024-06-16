@@ -8,25 +8,28 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
-import Server.Models.ChatMessage;
+import Shared.ChatMessage;
 import Shared.IChatConnection;
 
 public class ChatConnection
-        extends UnicastRemoteObject
-        implements IChatConnection 
+    extends UnicastRemoteObject
+    implements IChatConnection 
 {
-    private final int MAX_MESSAGE_HISTORY = 500;
-    private final String CLIENT_NOT_REGISTERED_MESSAGE = 
-        "Sorry no client regiestered. Please register the client first.";
-    private final ArrayList<ChatMessage> CLIENT_NOT_REGISTERED_LIST = new ArrayList<>();
+    private final int MAX_MESSAGE_HISTORY;
+    private final String CLIENT_NOT_REGISTERED_MESSAGE;
+    private final ArrayList<ChatMessage> CLIENT_NOT_REGISTERED_LIST;
 
     private final MySemaphore clientSemaphore = new MySemaphore(10);
     private final HashMap<String, String> clients = new HashMap<>(); // key = token, value = name
     private final MySemaphore messageSemaphore = new MySemaphore(10);
     private final ArrayList<ChatMessage> messages = new ArrayList<>();
 
-    protected ChatConnection() throws RemoteException {
+    protected ChatConnection(int maxMessageHistory) throws RemoteException {
         super();
+        MAX_MESSAGE_HISTORY = maxMessageHistory;
+        CLIENT_NOT_REGISTERED_MESSAGE = 
+            "Sorry no client regiestered. Please register the client first.";
+        CLIENT_NOT_REGISTERED_LIST = new ArrayList<>();
         CLIENT_NOT_REGISTERED_LIST.add(
             new ChatMessage("System", CLIENT_NOT_REGISTERED_MESSAGE));
     }

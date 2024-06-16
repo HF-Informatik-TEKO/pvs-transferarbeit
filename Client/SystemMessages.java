@@ -1,6 +1,6 @@
 package Client;
 
-import Server.Models.ChatMessage;
+import Shared.ChatMessage;
 
 public class SystemMessages {
     public static final ChatMessage STARTUP_FAIL_MESSAGE = new ChatMessage("System",

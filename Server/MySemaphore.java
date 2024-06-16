@@ -12,7 +12,7 @@ public class MySemaphore {
      * passing (enter)
      */
     public synchronized void passeren(int numberOfPlaces) {
-        while (places < numberOfPlaces){
+        if (places < numberOfPlaces){
             try {
                 wait();
             } catch (InterruptedException e) {
@@ -28,6 +28,6 @@ public class MySemaphore {
      */
     public synchronized void vrijgave(int numberOfPlaces) {
         places += numberOfPlaces;
-        notifyAll();
+        notify();
     }
 }
