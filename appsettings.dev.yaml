@@ -1,0 +1,15 @@
+general:
+  rpc-name: "Chat"
+  ip-address: "127.0.0.1"
+  port: 12007
+server:
+  # Maximum number of messages the server stores at once.
+  max-message-history: 500
+client:
+  # Time before new messages are loaded automatically.
+  refresh-rate-ms: 500
+  # Delay between client history clean (reset to server max history and only server messages).
+  # 600'000 = 10 minutes
+  reset-rate-ms: 600_000
+  # Tries before display a error message on failed message fetch.
+  get-message-max-fail-count: 10

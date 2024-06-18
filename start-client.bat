@@ -1,1 +1,1 @@
-java -jar pvs-transferarbeit-client.jar
+java -jar pvs-transferarbeit-client.jar --appsettings appsettings.dev.yaml

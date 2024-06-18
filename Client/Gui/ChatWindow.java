@@ -1,5 +1,6 @@
 package Client.Gui;
 
+import Shared.AppSettings;
 import Shared.IChatConnection;
 import javax.swing.*;
 import java.awt.*;
@@ -26,14 +27,12 @@ public class ChatWindow extends JFrame{
     public ChatWindow(
         IChatConnection chat, 
         String errorMessage, 
-        int refreshRate, 
-        long resetRate, 
-        int maxTimeouts
+        AppSettings settings
         ) 
     {
-        this.CHAT = new ChatConnection(chat, this, maxTimeouts);
-        this.REFRESH_RATE_MS = refreshRate;
-        this.RESET_RATE_MS = resetRate;
+        this.CHAT = new ChatConnection(chat, this, settings.clientGetMessageMaxFailCount);
+        this.REFRESH_RATE_MS = settings.clientRefreshRateMs;
+        this.RESET_RATE_MS = settings.clientResetRateMs;
         
         this.setTitle(
             "RCP (RMI) - TCP, Chat Client"
