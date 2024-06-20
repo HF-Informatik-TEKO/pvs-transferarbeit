@@ -1,7 +1,7 @@
 general:
   rpc-name: "Chat"
   ip-address: "127.0.0.1"
-  port: 999
+  port: 1200
 server:
   # Maximum number of messages the server stores at once.
   max-message-history: 500
