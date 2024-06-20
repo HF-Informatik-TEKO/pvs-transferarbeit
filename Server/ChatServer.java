@@ -2,18 +2,20 @@ package Server;
 
 import java.rmi.registry.LocateRegistry;
 
+import Shared.AppSettingsReader;
+
 public class ChatServer {
-    private static final int PORT = 1200;
-    private static final String RPC_NAME = "Chat";
-    private static final int MAX_MESSAGE_HISTORY = 500;
 
     public static void main(String[] args) {
-        System.out.println("Start server with port " + PORT);
+        var appSettings = AppSettingsReader.read(args);
+
+        System.out.println("Start server with port " + appSettings.port);
         try {
-            var registry = LocateRegistry.createRegistry(PORT);
-            registry.bind(RPC_NAME, new ChatConnection(MAX_MESSAGE_HISTORY));
+            var registry = LocateRegistry.createRegistry(appSettings.port);
+            registry.bind(appSettings.rpcName, new ChatConnection(appSettings.serverMaxMessageHistory));
         } catch (Exception e) {
             System.err.println("Error in Server: " + e.getMessage());
         }
     }
+
 }
