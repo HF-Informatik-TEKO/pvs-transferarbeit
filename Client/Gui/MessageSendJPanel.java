@@ -41,8 +41,9 @@ public class MessageSendJPanel extends JPanel {
     }
 
     public void sendMessage() {
-        CHAT.sendMessage(chatInput.getText());
-        chatInput.setText("");
+        if (CHAT.sendMessage(chatInput.getText())) {
+            chatInput.setText("");
+        }
     }
 
     @Override

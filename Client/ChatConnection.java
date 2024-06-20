@@ -40,16 +40,17 @@ public class ChatConnection {
         return token;
     }
 
-    public String sendMessage(String message) {
+    public boolean sendMessage(String message) {
         System.out.println("send message");
         try {
             connection.send(userToken, message);
         } catch (RemoteException e1) {
             System.err.println("Failed to send messages.");
             gui.displayMessage(SystemMessages.MESSAGE_SEND_FAIL.toHtml());
+            return false;
         }
 
-        return null;
+        return true;
     }
 
     public List<ChatMessage> getMessages(Date lastRecieved) {
