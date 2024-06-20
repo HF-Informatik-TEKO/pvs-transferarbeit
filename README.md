@@ -48,7 +48,7 @@ The configrations in this section belongs to the client and the server.
 
 ### Server
 The configrations in this section belongs to the server only.  
-**max-message-history**: the maximum amout of messages the server stores internally before deleting messages from the store.
+**max-message-history**: the maximum amout of messages the server stores internally before deleting messages from the store
 
 ### Client
 The configrations in this section belongs to the client only.  
@@ -58,20 +58,20 @@ The configrations in this section belongs to the client only.
 
 ## Troubleshoot
 ### Error On Client Start
-![startup-fail](img/startup-fail.png)
+![startup-fail](img/startup-fail.png)  
 If an error occurs during the start of the client application, then no connection to the server could be made. Please check that following:
 - Server is running
 - Server and client use the same configuration in the appsettings.general section
 - Server and client refer to the same appsetting file
 
 ### Error On Login
-![login-fail](img/login-fail.png)
+![login-fail](img/login-fail.png)  
 If an error occurs on login, usually the password is misspelled, this is also the case, if someone else took your username first. The other reason can be that the server is not responding. This can have various reasons like the server is not connected or there is an internal server error and a restart is required.  
 
 ### Error On Message Fetch
-![message-fetch-fail](img/message-fetch-fail.png)
+![message-fetch-fail](img/message-fetch-fail.png)  
 If this error occurs then the `get-message-max-fail-count` has reached, which means the message fetch has faild several times. Most likely the server is down or the connection to the server is broken.
 
 ### Error On Message Send
-![message-send-fail](img/message-send-fail.png)
+![message-send-fail](img/message-send-fail.png)  
 The message you wanted to send has not made it to the server. Most likely the server is down or the connection to the server is broken.
